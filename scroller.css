@@ -1,0 +1,41 @@
+body{
+	background-color: dimgray;
+}
+
+.contentblock{
+	/* The totalheight of this 'row' should be set as smartscroll rowheight (100 by default!) */
+	height: 99px;
+	border-top: 1px solid black;
+    width: 100%;
+}
+
+.list-container{
+	margin-top: 50px;
+	margin-left: 50px;
+	margin-right: 50px;
+	background-color: white;
+}
+
+
+
+/* NEEDED ONCES */
+
+.smsc_wrap{
+	position: relative;
+	overflow: hidden;
+}
+
+.smsc_ac{
+	position: absolute;
+    width: 100%; /* can be removed */
+}
+
+.smsc_sp{
+	overflow: auto;
+	position: relative;
+}
+
+.smsc_faker{
+	position: absolute;
+	width: 1px;
+}
