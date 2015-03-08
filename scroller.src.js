@@ -5,26 +5,27 @@
  * 2014 Dreamsolution B.V., Delft, The Netherlands
  *
  */
-smartscroll = function() {
+var smartscroll = function () {
     'use strict';
 
     function createStyler(window) {
-        var _handle, // timeout handle
-            _stylers, // style create functions
-            _listeners; // resize listeners
+        var handle, // timeout handle
+            stylers, // style create functions
+            listeners; // resize listeners
 
-        (function() {
-            _listeners = [];
-            _stylers = [];
+        (function () {
+            listeners = [];
+            stylers = [];
             window.addEventListener('resize', onResize, false);
             window.addEventListener('unload', onUnload, false);
         })();
 
         function create_styler(styleFn) {
-            return function(width, height) {
+            return function (width, height) {
                 var s = '\n';
-                if ('name' in styleFn)
+                if (styleFn.hasOwnProperty('name')) {
                     s += '/* ' + styleFn.name + ' */\n';
+                }
                 s += styleFn(width, height);
                 return s;
             };
@@ -39,7 +40,7 @@ smartscroll = function() {
                     '<style type="text/css" class="viewport-styler">' +
                     text + '</style>');
 
-            if (cstyler){
+            if (cstyler) {
                 cstyler.parentNode.removeChild(cstyler);
             }
         }
@@ -50,38 +51,39 @@ smartscroll = function() {
                 width = window.innerWidth,
                 height = window.innerHeight;
 
-            _handle = undefined;
-            for (i = 0; i < _stylers.length; i++) {
-                exprs.push(_stylers[i](width, height));
+            handle = undefined;
+            for (i = 0; i < stylers.length; i++) {
+                exprs.push(stylers[i](width, height));
             }
             replace_style_elm(exprs.join('\n'));
 
-            for (i = _listeners.length; i--; ) {
-                _listeners[i]();
+            for (i = listeners.length; i--;) {
+                listeners[i]();
             }
         }
 
         function onResize() {
-            if (_handle)
-                window.clearTimeout(_handle);
-            _handle = window.setTimeout(eval_stylers, 120);
+            if (handle) {
+                window.clearTimeout(handle);
+            }
+            handle = window.setTimeout(eval_stylers, 120);
         }
 
         function onUnload() {
-            window.clearTimeout(_handle);
-            _listeners = _handle = _stylers = undefined;
+            window.clearTimeout(handle);
+            listeners = handle = stylers = undefined;
         }
 
         return {
             resize: function resize(callbackFn) {
-                _listeners.push(callbackFn);
+                listeners.push(callbackFn);
             },
             addStyleCreator: function addStyleCreator(styleFn) {
                 var styler = create_styler(styleFn),
                     width = window.innerWidth,
                     height = window.innerHeight;
 
-                _stylers[_stylers.length] = styler;
+                stylers[stylers.length] = styler;
                 // Immediately append the style:
                 var elm = document.querySelector('head .viewport-styler');
                 var text = elm ? elm.innerHTML : '';
@@ -111,37 +113,42 @@ smartscroll = function() {
                 rowHeight = conf.height;
             }
             smartlist = conf.list;
-            wrapper = conf.container
+            wrapper = conf.container;
 
-            var structure = '<div class="smsc_sp"><div class="smsc_faker"></div><div class="smsc_ac"></div></div>';
+            var structure = '<div class="smsc_sp">' +
+                '<div class="smsc_faker"></div>' +
+                '<div class="smsc_ac"></div>' +
+                '</div>';
             wrapper.insertAdjacentHTML('afterbegin', structure);
             wrapper.classList.add('smsc_wrap');
-
 
             heightforcer = wrapper.querySelector('.smsc_faker');
             pane = wrapper.querySelector('.smsc_sp');
             actualcontent = wrapper.querySelector('.smsc_ac');
 
-            pane.style.height = window.getComputedStyle(wrapper).height;
+            pane.style.height = getHeight(wrapper);
             pane.addEventListener('scroll', adjustView, false);
 
             styler.resize(onStylerResize);
-
             layout();
         })();
 
         function transform(d) {
-                actualcontent.style.transform = 'translate(0px, ' + d + 'px)';
+            actualcontent.style.transform = 'translate(0px, ' + d + 'px)';
+        }
+
+        function getHeight(el){
+            return window.getComputedStyle(el).height;
         }
 
         function layout() {
             listlength = smartlist.getSize();
 
-            drawnum = Math.ceil(parseInt(window.getComputedStyle(pane).height,10) / rowHeight) + 1;
+            drawnum = Math.ceil(parseInt(getHeight(pane),10) / rowHeight) + 1;
             heightforcer.style.height = (listlength * rowHeight) + 'px';
 
             if(pane.scrollTop > listlength * rowHeight){
-                pane.scrollTop = listlength * rowHeight - parseInt(window.getComputedStyle(pane).height,10);
+                pane.scrollTop = listlength * rowHeight - parseInt(getHeight(pane),10);
             }
             adjustView(null, true);
         }
@@ -152,7 +159,6 @@ smartscroll = function() {
             o = o > 0 ? o - 1 : 0;
 
             var firstElement = Math.floor((o) / rowHeight) + 1;
-
 
             if (drawnum < listlength && firstElement > listlength-drawnum + 1) {
                 firstElement = listlength - drawnum + 1;
@@ -175,26 +181,28 @@ smartscroll = function() {
              */
             var t;
 
-            if (!listchanged && startWith == curfirst + 1) {
-                actualcontent.removeChild(actualcontent.firstChild); // children('div:first-child').remove();
-                actualcontent.insertAdjacentHTML('beforeend',smartlist.renderItemAtPosition(curfirst + drawnum));
+            if (!listchanged && startWith === curfirst + 1) {
+                actualcontent.removeChild(actualcontent.firstChild);
+                actualcontent.insertAdjacentHTML('beforeend',
+                    smartlist.renderItemAtPosition(curfirst + drawnum));
             }
-            else if (!listchanged && startWith == curfirst) {
+            else if (!listchanged && startWith === curfirst) {
                 actualcontent.removeChild(actualcontent.lastChild);
-                actualcontent.insertAdjacentHTML('afterbegin',smartlist.renderItemAtPosition(curfirst -1));
+                actualcontent.insertAdjacentHTML('afterbegin',
+                    smartlist.renderItemAtPosition(curfirst -1));
             }
             else {
                 // too much of a hassle.. just redraw!
                 actualcontent.innerHTML = '';
-                for (var i = startWith; i < startWith + drawnum && i - startWith < listlength; i++) {
+                for (var i = startWith; i < startWith + drawnum
+                            && i - startWith < listlength; i++) {
                     t = smartlist.renderItemAtPosition(i);
                     if (t) {
-                        actualcontent.insertAdjacentHTML('beforeend',t);
+                        actualcontent.insertAdjacentHTML('beforeend', t);
                     }
                 }
             }
         }
-
 
         function onStylerResize() {
             pane.style.height = window.getComputedStyle(wrapper).height;
@@ -203,9 +211,9 @@ smartscroll = function() {
 
         return {
             handleEvent: function handleEvent(type, msg) {
-                if (type == 'listchanged') {
+                if (type === 'listchanged') {
                     layout();
-                    var event = new CustomEvent('my-event', {detail: msg});
+                    var event = new CustomEvent('my-event', { detail: msg});
                     wrapper.dispatchEvent(event);
                 }
             },
@@ -227,7 +235,6 @@ smartscroll = function() {
             order = "id",
             filter = "";
 
-
         // We're using an object-based event handling, and not callback so that
         // we can easily hook up a smartscroll object to the accompanying
         // smartlist object.
@@ -244,13 +251,15 @@ smartscroll = function() {
         }
 
         function maintainShadowList() {
-            if ('filter' in list && typeof list.filter == 'function') {
+            if ('filter' in list && typeof list.filter === 'function') {
                 shadowlist = list.filter(js_filter_callback);
             } else {
                 shadowlist = [];
-                for (var i = 0; i < list.length; i++)
-                    if (filterfn(list[i], filter))
+                for (var i = 0; i < list.length; i++) {
+                    if (filterfn(list[i], filter)) {
                         shadowlist[shadowlist.length] = list[i];
+                    }
+                }
             }
             shadowlist.sort(dynamicSort());
             fireEvent('listchanged', {
@@ -260,16 +269,16 @@ smartscroll = function() {
         }
 
         function dynamicSort() {
-            if (typeof order == 'function') {
+            if (typeof order === 'function') {
                 return order;
             } else {
-                var ordering = order[0] == "-" ? -1 : 1,
-                    prop = ordering == -1 ? order.substr(1) : order;
+                var ordering = order[0] === "-" ? -1 : 1,
+                    prop = ordering === -1 ? order.substr(1) : order;
 
                 return function sorter(a, b) {
-                    // XXX IM: Force the null values to be on the end,
-                    // always...(regardless of sort order):
-                    //
+                    /** XXX Force the null values to be on the end,
+                     *  always...(regardless of sort order):
+                     */
                     var prop_a = a[prop],
                         prop_b = b[prop],
                         missing_in_a = prop_a === undefined || prop_a === null,
@@ -299,11 +308,13 @@ smartscroll = function() {
 
             set: function set(settings) {
                 var mt = false;
-                if (settings.hasOwnProperty('filter') && settings.filter !== filter) {
+                if (settings.hasOwnProperty('filter')
+                        && settings.filter !== filter) {
                     filter = settings.filter;
                     mt = true;
                 }
-                if (settings.hasOwnProperty('order') && settings.order !== order) {
+                if (settings.hasOwnProperty('order')
+                        && settings.order !== order) {
                     order = settings.order;
                     mt = true;
                 }
@@ -345,7 +356,6 @@ smartscroll = function() {
             }
         };
     }
-
 
     // There should be one instance of the styler per window.
     var styler = createStyler(window);
