@@ -183,13 +183,21 @@ var smartscroll = function () {
 
             if (!listchanged && startWith === curfirst + 1) {
                 actualcontent.removeChild(actualcontent.firstChild);
-                actualcontent.insertAdjacentHTML('beforeend',
-                    smartlist.renderItemAtPosition(curfirst + drawnum));
+                t = smartlist.renderItemAtPosition(curfirst + drawnum);
+                if (typeof t === 'string') {
+                    actualcontent.insertAdjacentHTML('beforeend', t);
+                } else {
+                    actualcontent.appendChild(t);
+                }
             }
             else if (!listchanged && startWith === curfirst) {
                 actualcontent.removeChild(actualcontent.lastChild);
-                actualcontent.insertAdjacentHTML('afterbegin',
-                    smartlist.renderItemAtPosition(curfirst -1));
+                t = smartlist.renderItemAtPosition(curfirst - 1);
+                if (typeof t === 'string') {
+                    actualcontent.insertAdjacentHTML('afterbegin', t);
+                } else {
+                    actualcontent.insertBefore(t, actualcontent.firstchild);
+                }
             }
             else {
                 // too much of a hassle.. just redraw!
@@ -197,8 +205,10 @@ var smartscroll = function () {
                 for (var i = startWith; i < startWith + drawnum
                             && i - startWith < listlength; i++) {
                     t = smartlist.renderItemAtPosition(i);
-                    if (t) {
+                    if (t && typeof t === 'string') {
                         actualcontent.insertAdjacentHTML('beforeend', t);
+                    } else if (t) {
+                        actualcontent.appendChild(t);
                     }
                 }
             }
