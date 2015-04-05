@@ -2,9 +2,10 @@
  *
  * Smartscroll
  *
- * 2014 Dreamsolution B.V., Delft, The Netherlands
+ * 2015 Dreamsolution B.V., Delft, The Netherlands
  *
  */
+
 var smartscroll = function () {
     'use strict';
 
@@ -192,8 +193,6 @@ var smartscroll = function () {
              */
             var t;
 
-            var tbr;
-
             if (!listchanged && startWith === curfirst + 1) {
                 moveToAttic(actualcontent.firstChild);
                 t = smartlist.renderItemAtPosition(curfirst + drawnum);
@@ -209,7 +208,7 @@ var smartscroll = function () {
                 if (typeof t === 'string') {
                     actualcontent.insertAdjacentHTML('afterbegin', t);
                 } else {
-                    actualcontent.insertBefore(t, actualcontent.firstchild);
+                    actualcontent.insertBefore(t, actualcontent.firstChild);
                 }
             }
             else {
@@ -218,8 +217,8 @@ var smartscroll = function () {
                     moveToAttic(actualcontent.firstChild);
                 }
 
-                for (var i = startWith; i < startWith + drawnum
-                            && i - startWith < listlength; i++) {
+                for (var i = startWith; i < startWith + drawnum &&
+                        i - startWith < listlength; i++) {
                     t = smartlist.renderItemAtPosition(i);
                     if (t && typeof t === 'string') {
                         actualcontent.insertAdjacentHTML('beforeend', t);
@@ -334,13 +333,13 @@ var smartscroll = function () {
 
             set: function set(settings) {
                 var mt = false;
-                if (settings.hasOwnProperty('filter')
-                        && settings.filter !== filter) {
+                if (settings.hasOwnProperty('filter') &&
+                            settings.filter !== filter) {
                     filter = settings.filter;
                     mt = true;
                 }
-                if (settings.hasOwnProperty('order')
-                        && settings.order !== order) {
+                if (settings.hasOwnProperty('order') &&
+                            settings.order !== order) {
                     order = settings.order;
                     mt = true;
                 }
