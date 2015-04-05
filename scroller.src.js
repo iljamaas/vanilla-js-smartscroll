@@ -214,8 +214,9 @@ var smartscroll = function () {
             }
             else {
                 // too much of a hassle.. just redraw!
-                while (actualcontent.firstChild)
+                while (actualcontent.firstChild) {
                     moveToAttic(actualcontent.firstChild);
+                }
 
                 for (var i = startWith; i < startWith + drawnum
                             && i - startWith < listlength; i++) {
