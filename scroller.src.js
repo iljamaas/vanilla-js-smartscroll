@@ -100,6 +100,7 @@ var smartscroll = function () {
         var wrapper,
             pane,
             actualcontent,
+            attic,
             heightforcer,
             smartlist;
 
@@ -117,6 +118,7 @@ var smartscroll = function () {
 
             var structure = '<div class="smsc_sp">' +
                 '<div class="smsc_faker"></div>' +
+                '<div class="smsc_attic"></div>' +
                 '<div class="smsc_ac"></div>' +
                 '</div>';
             wrapper.insertAdjacentHTML('afterbegin', structure);
@@ -125,6 +127,7 @@ var smartscroll = function () {
             heightforcer = wrapper.querySelector('.smsc_faker');
             pane = wrapper.querySelector('.smsc_sp');
             actualcontent = wrapper.querySelector('.smsc_ac');
+            attic = wrapper.querySelector('.smsc_attic');
 
             pane.style.height = getHeight(wrapper);
             pane.addEventListener('scroll', adjustView, false);
@@ -135,6 +138,7 @@ var smartscroll = function () {
 
         function transform(d) {
             actualcontent.style.transform = 'translate(0px, ' + d + 'px)';
+            actualcontent.style.webkitTransform = 'translate(0px, ' + d + 'px)';
         }
 
         function getHeight(el){
@@ -175,14 +179,23 @@ var smartscroll = function () {
             curfirst = firstElement;
         }
 
+        function moveToAttic(tbr){
+            attic.appendChild(tbr);
+            window.setTimeout(function(){
+                attic.removeChild(tbr);
+            }, 1000);
+        }
+
         function drawContent(startWith, listchanged) {
             /** if moving by one, just remove first one
              * and append one or vice-verse to keep performance. prevent unneeded redraws.
              */
             var t;
 
+            var tbr;
+
             if (!listchanged && startWith === curfirst + 1) {
-                actualcontent.removeChild(actualcontent.firstChild);
+                moveToAttic(actualcontent.firstChild);
                 t = smartlist.renderItemAtPosition(curfirst + drawnum);
                 if (typeof t === 'string') {
                     actualcontent.insertAdjacentHTML('beforeend', t);
@@ -191,7 +204,7 @@ var smartscroll = function () {
                 }
             }
             else if (!listchanged && startWith === curfirst) {
-                actualcontent.removeChild(actualcontent.lastChild);
+                moveToAttic(actualcontent.lastChild);
                 t = smartlist.renderItemAtPosition(curfirst - 1);
                 if (typeof t === 'string') {
                     actualcontent.insertAdjacentHTML('afterbegin', t);
@@ -201,7 +214,9 @@ var smartscroll = function () {
             }
             else {
                 // too much of a hassle.. just redraw!
-                actualcontent.innerHTML = '';
+                while (actualcontent.firstChild)
+                    moveToAttic(actualcontent.firstChild);
+
                 for (var i = startWith; i < startWith + drawnum
                             && i - startWith < listlength; i++) {
                     t = smartlist.renderItemAtPosition(i);

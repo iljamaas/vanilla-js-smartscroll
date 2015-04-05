@@ -29,6 +29,10 @@ body{
 	position: absolute;
     width: 100%; /* can be removed */
 }
+.smsc_attic{
+	position: absolute;
+	display: none;
+}
 
 .smsc_sp{
 	overflow: auto;
