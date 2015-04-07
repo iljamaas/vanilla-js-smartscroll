@@ -18,17 +18,13 @@ body{
 
 
 
-/* NEEDED ONCES */
+/* NEEDED ONES */
 
 .smsc_wrap{
 	position: relative;
 	overflow: hidden;
 }
 
-.smsc_ac{
-	position: absolute;
-    width: 100%; /* can be removed */
-}
 .smsc_attic{
 	position: absolute;
 	display: none;
