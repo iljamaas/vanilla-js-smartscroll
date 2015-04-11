@@ -110,18 +110,9 @@ var smartscroll = function () {
             listlength = 0,
             curfirst = 1,
             drawnum = 0,
-            nth_active = 0; // XXX: 0 means No active row!  nth is NOT 0-based!
+            nth_active = 0; // XXX: 0 means -NO- active row!  smartlist-functions are NOT 0-based!
 
         (function() {
-            Math.easeInOutQuad = function (t, b, c, d) {
-                t /= d/2;
-                if (t < 1){
-                    return c/2*t*t + b;
-                }
-                t--;
-                return -c/2 * (t*(t-2) - 1) + b;
-            };
-
             if (conf.hasOwnProperty('height')) {
                 rowHeight = conf.height;
             }
@@ -135,29 +126,49 @@ var smartscroll = function () {
                 '<div class="smsc_attic"></div>' +
                 '<div class="smsc_ac"></div>' +
                 '</div>';
+
+            // Prepare wrapper
             wrapper.insertAdjacentHTML('afterbegin', structure);
             wrapper.classList.add('smsc_wrap');
+            wrapper.addEventListener('previous',onPrevious, false);
+            wrapper.addEventListener('next',onNext, false);
 
-            heightforcer = wrapper.querySelector('.smsc_faker');
+            // Prepare actual scrolling pane
             pane = wrapper.querySelector('.smsc_sp');
+            pane.style.height = getElementHeight(wrapper);
+            pane.addEventListener('scroll', onScroll, false);
+
+            // Prepare 'content' part
             actualcontent = wrapper.querySelector('.smsc_ac');
-            attic = wrapper.querySelector('.smsc_attic');
+            actualcontent.addEventListener('click', onClick, false);
+
+            // Prepare key-event capturing
             keycapture = wrapper.querySelector('.smsc_key_capture');
+            keycapture.addEventListener('focus', onFocus, false);
+            keycapture.addEventListener('keydown', onKeydown, false);
 
-            pane.style.height = getHeight(wrapper);
-            pane.addEventListener('scroll', adjustView, false);
+            // Add the trick to get the scrollbar we want
+            heightforcer = wrapper.querySelector('.smsc_faker');
 
-            wrapper.addEventListener('previous',_previous, false);
-            wrapper.addEventListener('next',_next, false);
-
-            actualcontent.addEventListener('click', row_click, false);
-
-            keycapture.addEventListener('focus', _focus, false);
-            keycapture.addEventListener('keydown', _keydown, false);
+            // Attic for delay thrashing of out of view DOMnodes.
+            // Webkit needs this..
+            attic = wrapper.querySelector('.smsc_attic');
 
             styler.resize(onStylerResize);
-            layout();
+
+            prepareCheat();
         })();
+
+        // Helpers.
+
+        function easeInOutQuad(t, b, c, d) {
+            t /= d/2;
+            if (t < 1){
+                return c/2*t*t + b;
+            }
+            t--;
+            return -c/2 * (t*(t-2) - 1) + b;
+        }
 
         function scrollTo(element, to, duration) {
             var start = element.scrollTop,
@@ -167,7 +178,7 @@ var smartscroll = function () {
 
             var animateScroll = function(){
                 currentTime += increment;
-                var val = Math.easeInOutQuad(currentTime, start, change, duration);
+                var val = easeInOutQuad(currentTime, start, change, duration);
                 element.scrollTop = val;
                 if(currentTime < duration) {
                     setTimeout(animateScroll, increment);
@@ -176,72 +187,73 @@ var smartscroll = function () {
             animateScroll();
         }
 
-        function transform(d) {
-            actualcontent.style.transform = 'translate(0px, ' + d + 'px)';
-            actualcontent.style.webkitTransform = 'translate(0px, ' + d + 'px)';
-        }
-
-        function getHeight(el){
+        function getElementHeight(el){
             return window.getComputedStyle(el).height;
         }
 
-        function paneHeight(){
-            return parseInt(getHeight(pane),10);
+        function getPaneHeight(){
+            return parseInt(getElementHeight(pane),10);
         }
 
-        function _focus() {
+        // Events
+
+        function onFocus() {
             keycapture.focus();
         }
 
-        function _previous(){
+        function onPrevious(){
             var n = Math.max(nth_active-1, 1);
             if (n === nth_active){ return; }
             if ((n-1) * rowHeight < pane.scrollTop ){
                 scrollTo(pane, (n-1) * rowHeight, 150);
             }
             nth_active = n;
-            row_activate();
+            fireRowActivated();
         }
 
-        function _next(){
+        function onNext(){
             var n = Math.min(nth_active+1, listlength);
             if (n > listlength){ return; }
-            if (n * rowHeight > pane.scrollTop + paneHeight() ){
-                scrollTo(pane, (n * rowHeight) - paneHeight(), 150);
+            if (n * rowHeight > pane.scrollTop + getPaneHeight() ){
+                scrollTo(pane, (n * rowHeight) - getPaneHeight(), 150);
             }
             nth_active = n;
-            row_activate();
+            fireRowActivated();
         }
 
-        function _keydown(evt){
+        function onKeydown(evt){
             if (evt.which === 38){
-                _previous();
+                onPrevious();
             } else if (evt.which === 40){
-                _next();
+                onNext();
             } else if (evt.which !== 9){
                 // Allow TAB, Maybe allow some more...
                 evt.preventDefault();
             }
         }
 
-        function row_click(evt) {
-            _focus(false);
-            /** Findout which 'row' has been clicked...
-             *  As we ALSO want to know which ITEM from the smartlist it is math is a lot better
-             *  than a lot of DOM-traversing..
-             */
-
-            nth_active = parseInt(( evt.clientY
-                            - wrapper.getBoundingClientRect().top
-                            + pane.scrollTop
-                        ) / rowHeight, 10) + 1;
-
-            row_activate();
+        function onClick(evt) {
+            onFocus();
+            nth_active = parseInt(( evt.clientY -
+                wrapper.getBoundingClientRect().top +
+                pane.scrollTop ) / rowHeight, 10) + 1;
+            fireRowActivated();
         }
 
-        function row_activate(){
+        function onStylerResize() {
+            pane.style.height = getElementHeight(wrapper);
+            prepareCheat();
+        }
+
+        function onScroll(){
+            doCheat(false);
+        }
+
+        // Fires
+
+        function fireRowActivated(){
             wrapper.dispatchEvent(
-                new CustomEvent('smsc-row-activated',
+                new CustomEvent('row-activated',
                     {detail: {
                             item: smartlist.getItemAtPosition(nth_active),
                             active_row: nth_active,
@@ -252,8 +264,7 @@ var smartscroll = function () {
                 )
             );
 
-            /* The convention is to add a smsc_active_row class to the row-root-element */
-
+            /* The convention is to add the .smsc_active_row class to the row-root-element. */
             var row = actualcontent.firstChild;
             var i = curfirst;
             while (row) {
@@ -267,38 +278,11 @@ var smartscroll = function () {
             }
         }
 
+        // Viewport handling // All the actual 'cheating'
 
-        function layout() {
-            listlength = smartlist.getSize();
-
-            drawnum = Math.ceil(parseInt(getHeight(pane),10) / rowHeight) + 1;
-            heightforcer.style.height = (listlength * rowHeight) + 'px';
-
-            if(pane.scrollTop > listlength * rowHeight){
-                pane.scrollTop = listlength * rowHeight - parseInt(getHeight(pane),10);
-            }
-            adjustView(null, true);
-        }
-
-        function adjustView(event, listchanged) {
-            var dx = 0;
-            var o = pane.scrollTop;
-            o = o > 0 ? o - 1 : 0;
-
-            var firstElement = Math.floor((o) / rowHeight) + 1;
-
-            if (drawnum < listlength && firstElement > listlength-drawnum + 1) {
-                firstElement = listlength - drawnum + 1;
-                dx = rowHeight;
-            }
-
-            if (curfirst !== firstElement || listchanged) {
-                drawContent(firstElement, listchanged);
-
-            }
-            transform(o - (o % rowHeight) - dx);
-
-            curfirst = firstElement;
+        function transform(d) {
+            actualcontent.style.transform = 'translate(0px, ' + d + 'px)';
+            actualcontent.style.webkitTransform = 'translate(0px, ' + d + 'px)';
         }
 
         function moveToAttic(tbr){
@@ -306,6 +290,38 @@ var smartscroll = function () {
             window.setTimeout(function(){
                 attic.removeChild(tbr);
             }, 1000);
+        }
+
+        function prepareCheat() {
+            listlength = smartlist.getSize();
+            drawnum = Math.ceil(getPaneHeight() / rowHeight) + 1;
+            heightforcer.style.height = (listlength * rowHeight) + 'px';
+
+            if(pane.scrollTop > listlength * rowHeight){
+                pane.scrollTop = listlength * rowHeight - getPaneHeight();
+            }
+            doCheat(true);
+        }
+
+        function doCheat(listchanged) {
+            var dx = 0;
+            var o = pane.scrollTop;
+            o = o > 0 ? o - 1 : 0;
+
+            var first = Math.floor((o) / rowHeight) + 1;
+
+            if (drawnum < listlength && first > (listlength - drawnum + 1)) {
+                first = listlength - drawnum + 1;
+                dx = rowHeight;
+            }
+
+            if (curfirst !== first || listchanged) {
+                drawContent(first, listchanged);
+
+            }
+            transform(o - (o % rowHeight) - dx);
+
+            curfirst = first;
         }
 
         function drawContent(startWith, listchanged) {
@@ -350,24 +366,19 @@ var smartscroll = function () {
             }
         }
 
-        function onStylerResize() {
-            pane.style.height = window.getComputedStyle(wrapper).height;
-            layout();
-        }
+        // Public part
 
         return {
             handleEvent: function handleEvent(type, msg) {
                 if (type === 'listchanged') {
                     nth_active = 0;
-                    layout();
-                    //var event = new CustomEvent('my-event', { detail: msg});
-                    //wrapper.dispatchEvent(event);
+                    prepareCheat();
                 }
             },
             setRowHeight: function setRowHeight(h) {
                 // must be called if the row-detail-level is changed!
                 rowHeight = h;
-                layout();
+                prepareCheat();
             }
         };
     }

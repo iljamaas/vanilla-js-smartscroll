@@ -1,6 +1,7 @@
 // Some callbacks first
 
 function filterer(item, search){
+
     // Check if item should be shown (return true) or not (return false)
     // 'search' can be anything.. depending on what you feed the list. See below.
     var c = item.engine + ' ' + item.browser + ' ' + item.platform + ' ' + item.version + ' ' + item.grade;
@@ -8,14 +9,16 @@ function filterer(item, search){
 }
 
 function renderer(item, active){
-    // The convention: add class on 'root'-row element if active
+
+    // The convention: add class 'smsc_active_row' on 'ROOT-row-element if active
     var cl = active?'smsc_active_row':'';
+
     // Render a row. Please note; item is referenced back to it's source! So any modification
     // here will be ... a modification :-)
+
     // Most likely you will need some SANE formatter here. Mustache.js?
+
     var c = item.engine + ' <b>' + item.browser + '</b> ' + item.platform + ' ' + item.version + ' ' + item.grade;
-
-
 
     return '<div class="contentblock ' + cl + '">' + item.id + ' :: ' + c + '</div>';
 }
@@ -504,8 +507,10 @@ smartscroll.viewport_styler.addStyleCreator(styler);
 
 // Instantiate a list
 var myList = smartscroll.List({renderfn: renderer, filterfn: filterer});
+
 // Feed the list with some data
 myList.loadData(data);
+
 // Initialise the list
 myList.set({filter: search, order: order}); // the set function MUST at least be called once!
 
@@ -513,7 +518,7 @@ myList.set({filter: search, order: order}); // the set function MUST at least be
 var myPane = smartscroll.Scroll( {container: document.querySelector('.list-container'), list: myList } );
 
 
-document.querySelector('.list-container').addEventListener('smsc-row-activated',function(evt){
+document.querySelector('.list-container').addEventListener('row-activated',function(evt){
     console.log(evt.detail);
 }, false);
 
@@ -521,3 +526,25 @@ document.querySelector('.list-container').addEventListener('smsc-row-activated',
 myList.addListener(myPane);  // Usefull if you tend to CHANGE the data
 
 myPane.setRowHeight(100); // 100 is also the default, but just as an example
+
+
+// Polyfill for creating CustomEvents on IE9/10/11
+// https://github.com/krambuhl/custom-event-polyfill/blob/master/custom-event-polyfill.js
+
+if (!window.CustomEvent || typeof window.CustomEvent !== 'function') {
+    var CustomEvent = function(event, params) {
+        var evt;
+        params = params || {
+            bubbles: false,
+            cancelable: false,
+            detail: undefined
+        };
+
+        evt = document.createEvent("CustomEvent");
+        evt.initCustomEvent(event, params.bubbles, params.cancelable, params.detail);
+        return evt;
+    };
+
+    CustomEvent.prototype = window.Event.prototype;
+    window.CustomEvent = CustomEvent; // expose definition to window
+}
