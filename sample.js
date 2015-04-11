@@ -1,4 +1,5 @@
 // Some callbacks first
+
 function filterer(item, search){
     // Check if item should be shown (return true) or not (return false)
     // 'search' can be anything.. depending on what you feed the list. See below.
@@ -6,12 +7,17 @@ function filterer(item, search){
     return (c.toLowerCase().indexOf(search.toLowerCase()) != -1)
 }
 
-function renderer(item){
+function renderer(item, active){
+    // The convention: add class on 'root'-row element if active
+    var cl = active?'smsc_active_row':'';
     // Render a row. Please note; item is referenced back to it's source! So any modification
     // here will be ... a modification :-)
     // Most likely you will need some SANE formatter here. Mustache.js?
     var c = item.engine + ' <b>' + item.browser + '</b> ' + item.platform + ' ' + item.version + ' ' + item.grade;
-    return '<div class="contentblock">' + item.id + ' :: ' + c + '</div>';
+
+
+
+    return '<div class="contentblock ' + cl + '">' + item.id + ' :: ' + c + '</div>';
 }
 
 function styler(width, height) {
@@ -504,7 +510,14 @@ myList.loadData(data);
 myList.set({filter: search, order: order}); // the set function MUST at least be called once!
 
 // Instantiate the smartscroll by assign a container and the list
-myPane = smartscroll.Scroll( {container: document.querySelector('.list-container'), list: myList } );
+var myPane = smartscroll.Scroll( {container: document.querySelector('.list-container'), list: myList } );
+
+
+document.querySelector('.list-container').addEventListener('smsc-row-activated',function(evt){
+    console.log(evt.detail);
+}, false);
+
+
 myList.addListener(myPane);  // Usefull if you tend to CHANGE the data
 
 myPane.setRowHeight(100); // 100 is also the default, but just as an example

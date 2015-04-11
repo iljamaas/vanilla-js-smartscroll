@@ -16,7 +16,11 @@ body{
 	background-color: white;
 }
 
+/* You should define this one */
 
+.smsc_active_row{
+    background-color: beige;
+ }
 
 /* NEEDED ONES */
 
@@ -28,6 +32,13 @@ body{
 .smsc_attic{
 	position: absolute;
 	display: none;
+}
+
+.smsc_key_capture{
+    position: absolute;
+    top: -20px;
+    width: 10px;
+    height: 10px;
 }
 
 .smsc_sp{
